@@ -25,8 +25,18 @@ export const useMemberStore = defineStore(
       clearProfile,
     }
   },
-  // TODO: 持久化
   {
-    persist: true,
+    // TODO: 持久化
+    persist: {
+      storage: {
+        // 注意：uni-app 不是浏览器环境，没有 localStorage，必须用 uni.getStorageSync
+        getItem(key: string) {
+          return uni.getStorageSync(key)
+        },
+        setItem(key: string, value: any) {
+          uni.setStorageSync(key, value)
+        },
+      },
+    },
   },
 )
