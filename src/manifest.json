@@ -1,5 +1,5 @@
 {
-  "name": "小兔鲜儿",
+  "name": "小龟鲜儿",
   "appid": "",
   "description": "",
   "versionName": "1.0.0",
@@ -54,7 +54,9 @@
     "setting": {
       "urlCheck": false
     },
-    "usingComponents": true
+    "usingComponents": true,
+    "optimization": { "subPackages": true },
+    "lazyCodeLoading": "requiredComponents"  // 👈 加上这一行
   },
   "mp-alipay": {
     "usingComponents": true
