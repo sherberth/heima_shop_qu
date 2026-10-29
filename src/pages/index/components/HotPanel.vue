@@ -20,7 +20,11 @@ console.log(props.list)
         <text class="title-desc">{{ item.alt }}</text>
       </view>
       <!-- ✅ 是反引号 -->
-      <navigator hover-class="none" :url="`/pages/hot/hot?type=${item.type}`" class="cards">
+      <navigator
+        hover-class="none"
+        :url="`/pages/hot/hot?type=${item.type}`"
+        class="cards"
+      >
         <!-- 写死的两张网图 -->
         <!-- 👈 改动：删掉写死的两个 <image>，改为内层 v-for 循环图片数组 -->
         <image

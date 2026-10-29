@@ -6,17 +6,19 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getHotRecommendAPI } from '@/services/hot'
 import type { HotResult, SubTypeItem } from '@/types/hot'
+import { processGoodsData } from '@/utils/goodsHandler'
 // 热门推荐页 标题和url
 // 3. 这里放响应式数据 (比如你问的 activeTab)
 // ==========================================
 // 👇 核心：必须定义这些变量，否则模板直接报错
 const bannerPicture = ref('')
-const subTypes = ref<(SubTypeItem & { finish?: boolean })[]>([])
+const currentUrl = ref('')
+const subTypes = ref<(SubTypeItem & { finish?: boolean; isLoading?: boolean })[]>([])
 const activeIndex = ref(0) // 用来记录当前选中的 Tab
 
 const urlMap = [
-  { type: '1', title: '特惠推荐', url: '/hot/preference' },
-  { type: '2', title: '爆款推荐', url: '/hot/inVogue' },
+  { type: '1', title: '特惠', url: '/hot/preference' },
+  { type: '2', title: '爆款', url: '/hot/inVogue' },
   { type: '3', title: '一站买全', url: '/hot/oneStop' },
   { type: '4', title: '新鲜好物', url: '/hot/new' },
 ]
@@ -24,29 +26,6 @@ const urlMap = [
 // 定义变量存数据
 // uniapp 获取页面参数
 // 4. 这里放页面生命周期 onLoad (接参数+发请求)
-// ==========================================
-// ================= 2. 生命周期 =================
-// 只留这一个 onLoad！既接参数，又发请求，又设标题
-// onLoad((options) => {
-//   console.log('页面接收到的参数:', options)
-
-//   // 1. 拿到路由参数里的 type，如果没传就默认 '1'
-//   const pageType = options?.type || '1'
-
-//   // 2. 在映射表里找到对应的配置
-//   const currUrlMap = urlMap.find((v) => v.type === pageType)
-
-//   // 3. 容错处理：只有找到了，才去设置标题和发请求
-//   if (currUrlMap) {
-//     // 动态设置标题
-//     uni.setNavigationBarTitle({ title: currUrlMap.title })
-//     //uni.setNavigationBarTitle({ title: currUrlMap?.title || '热门推荐' })
-//     // 发起请求
-//     getHotRecommendData(currUrlMap.url)
-//   } else {
-//     uni.showToast({ title: '参数错误', icon: 'none' })
-//   }
-// })
 
 // 2. 讲师的魔法：用 defineProps 接参数
 // const query = defineProps<{
@@ -59,13 +38,56 @@ const getHotRecommendData = async (url: string) => {
     pageSize: 10,
   })
 
-  // 👇 把请求回来的数据保存起来！
+  //
   bannerPicture.value = res.result.bannerPicture
-  subTypes.value = res.result.subTypes
+  subTypes.value = res.result.subTypes.map((subType) => {
+    return {
+      ...subType,
+      goodsItems: {
+        ...subType.goodsItems,
+        items: processGoodsData(subType.goodsItems.items),
+      },
+    }
+  })
 }
 // // 3. 在外层直接匹配（因为 defineProps 是在 setup 阶段就执行的）
 // const currUrlMap = urlMap.find((v) => v.type === query.type)
+// ================= 触底分页加载 =================
+const onScrolltolower = async () => {
+  // 获取当前选中的 Tab 数据
+  const currentSubType = subTypes.value[activeIndex.value]
 
+  // 安全判断：如果没拿到数据，或者正在加载，或者已经到底了，直接 return
+  if (!currentSubType) return
+  if (currentSubType.finish) return
+  if (currentSubType.isLoading) return
+
+  currentSubType.isLoading = true // 上锁
+
+  try {
+    // 请求下一页
+    const nextPage = currentSubType.goodsItems.page + 1
+    const res = await getHotRecommendAPI<HotResult>(currentUrl.value, {
+      subType: currentSubType.id,
+      page: nextPage,
+      pageSize: currentSubType.goodsItems.pageSize,
+    })
+
+    // 提取新数据并追加
+    const newItems = res.result.subTypes[activeIndex.value].goodsItems.items
+    currentSubType.goodsItems.items.push(...newItems)
+
+    // 更新页码和结束状态
+    currentSubType.goodsItems.page = nextPage
+    if (nextPage >= res.result.subTypes[activeIndex.value].goodsItems.pages) {
+      currentSubType.finish = true
+    }
+  } catch (error) {
+    console.error('加载失败', error)
+  } finally {
+    currentSubType.isLoading = false // 解锁
+  }
+}
 // // 4. 设置标题（用 ! 强制断言非空）
 // uni.setNavigationBarTitle({ title: currUrlMap!.title })
 onLoad((options) => {
@@ -111,6 +133,7 @@ onLoad((options) => {
       v-show="activeIndex === index"
       scroll-y
       class="scroll-view"
+      @scrolltolower="onScrolltolower"
     >
       <view class="goods">
         <!-- 👇 核心：循环当前Tab下的商品列表 -->
@@ -128,6 +151,10 @@ onLoad((options) => {
             <text class="number">{{ goods.price }}</text>
           </view>
         </navigator>
+      </view>
+      <!-- 👇 加上这个加载提示框 -->
+      <view class="loading-text">
+        {{ item.finish ? '没有更多数据了~' : '正在加载...' }}
       </view>
     </scroll-view>
   </view>

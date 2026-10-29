@@ -13,80 +13,140 @@
   </view> -->
   <view is="pages/index/components/CategoryPanel">
     <view class="category CategoryPanel--category">
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-366 sk-text"
           style="background-position-x: 50%"
           >居家</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-424 sk-text"
           style="background-position-x: 50%"
           >锦鲤</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-17 sk-text"
           style="background-position-x: 50%"
           >服饰</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-122 sk-text"
           style="background-position-x: 50%"
           >母婴</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-94 sk-text"
           style="background-position-x: 50%"
           >个护</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-925 sk-text"
           style="background-position-x: 50%"
           >严选</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-320 sk-text"
           style="background-position-x: 50%"
           >数码</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-294 sk-text"
           style="background-position-x: 50%"
           >运动</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-926 sk-text"
           style="background-position-x: 50%"
           >杂项</text
         >
       </navigator>
-      <navigator class="category-item CategoryPanel--category-item" hover-class="none">
-        <image class="icon CategoryPanel--icon sk-image" mode="aspectFit"></image>
+      <navigator
+        class="category-item CategoryPanel--category-item"
+        hover-class="none"
+      >
+        <image
+          class="icon CategoryPanel--icon sk-image"
+          mode="aspectFit"
+        ></image>
         <text
           class="text CategoryPanel--text sk-transparent sk-text-14-2857-73 sk-text"
           style="background-position-x: 50%"
@@ -111,8 +171,14 @@
           >
         </view>
         <navigator class="cards HotPanel--cards" hover-class="none">
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
         </navigator>
       </view>
       <view class="item HotPanel--item">
@@ -129,8 +195,14 @@
           >
         </view>
         <navigator class="cards HotPanel--cards" hover-class="none">
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
         </navigator>
       </view>
       <view class="item HotPanel--item">
@@ -147,8 +219,14 @@
           >
         </view>
         <navigator class="cards HotPanel--cards" hover-class="none">
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
         </navigator>
       </view>
       <view class="item HotPanel--item">
@@ -165,8 +243,14 @@
           >
         </view>
         <navigator class="cards HotPanel--cards" hover-class="none">
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
-          <image class="image HotPanel--image sk-image" mode="aspectFit"></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
+          <image
+            class="image HotPanel--image sk-image"
+            mode="aspectFit"
+          ></image>
         </navigator>
       </view>
     </view>

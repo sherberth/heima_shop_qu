@@ -4,9 +4,13 @@
  * 处理商品列表数据（过滤、改名、降价、修复图片）
  */
 export const processGoodsData = (items: any[]) => {
+  if (!items || !Array.isArray(items)) return []
   // 1. 先过滤掉不需要的商品
   const filteredItems = items.filter((item) => {
-    if (item.name.includes('牛') || item.name.includes('猪') || item.name.includes('豚')) {
+    // 👇 核心修复：加个兜底，防止 name 不存在导致整个函数崩溃！
+    const blackList = ['牛', '猪', '豚', '臊', '蟹']
+    const nameStr = item.name || ''
+    if (blackList.some((word) => nameStr.includes(word))) {
       return false
     }
     return true

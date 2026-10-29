@@ -86,11 +86,24 @@ const props = defineProps<Props>()
 
 <template>
   <view class="carousel">
-    <swiper :circular="true" :autoplay="false" :interval="3000" @change="onChange">
+    <swiper
+      :circular="true"
+      :autoplay="false"
+      :interval="3000"
+      @change="onChange"
+    >
       <!-- 循环渲染后端返回的数据 -->
-      <swiper-item v-for="(item, index) in list" :key="item.id">
+      <swiper-item
+        v-for="(item, index) in list"
+        :key="item.id"
+        :class="{ 'is-first': index === 0 }"
+      >
         <!-- 注意这里 url 前面必须要有冒号 : -->
-        <navigator :url="item.hrefUrl || '/pages/index/index'" hover-class="none" class="navigator">
+        <navigator
+          :url="item.hrefUrl || '/pages/index/index'"
+          hover-class="none"
+          class="navigator"
+        >
           <!-- 直接使用后端的网络图 -->
           <image mode="aspectFill" class="image" :src="item.imgUrl"></image>
         </navigator>
