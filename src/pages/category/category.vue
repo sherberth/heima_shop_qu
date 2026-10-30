@@ -6,6 +6,7 @@ import { getHomeBannerAPI } from '@/services/home'
 import type { BannerItem } from '@/types/home'
 import type { CategoryTopItem } from '@/types/category'
 import { processGoodsData } from '@/utils/goodsHandler'
+import PageSkeleton from './PageSkeleton.vue'
 
 // ================= 数据获取 =================
 // 轮播图
@@ -69,15 +70,20 @@ const onLeftTabClick = (index: number) => {
   }, 50)
 }
 
+//是否加载完毕
+const isFinish = ref(false)
 // 页面加载
-onLoad(() => {
-  getBannerData()
-  getCategoryTopData()
+onLoad(async () => {
+  await Promise.all([getBannerData(), getCategoryTopData()])
+  // 2. 👇 核心魔法：强行等待 1500 毫秒（1.5秒）再关闭骨架屏
+  setTimeout(() => {
+    isFinish.value = true
+  }, 2500)
 })
 </script>
 
 <template>
-  <view class="viewport">
+  <view class="viewport" v-if="isFinish">
     <!-- 搜索框 (略) -->
     <!-- 如果想保留搜索框，确保它在最上面 -->
     <view class="search">
@@ -132,7 +138,11 @@ onLoad(() => {
               hover-class="none"
               :url="`/pages/goods/goods?id=${goods.id}`"
             >
-              <image class="image" mode="aspectFill" :src="handleImageUrl(goods.picture)"></image>
+              <image
+                class="image"
+                mode="aspectFill"
+                :src="handleImageUrl(goods.picture)"
+              ></image>
               <view class="name ellipsis">{{ goods.name }}</view>
               <view class="price">
                 <text class="symbol">¥</text>
@@ -144,10 +154,10 @@ onLoad(() => {
       </scroll-view>
     </view>
   </view>
+  <PageSkeleton v-else />
 </template>
 
 <style lang="scss" scoped>
-/* ================= 锁死大框架 ================= */
 page {
   height: 100%;
   overflow: hidden; /* 🚨 核心：禁止整个页面滚动 */
@@ -186,10 +196,13 @@ page {
   /* 左侧一级分类 */
   /* 左侧一级分类 */
   .primary {
-    width: 60rpx; /*改成 150rpx，这个宽度在 90% 的手机上看起来是最舒服的 */
-    flex-shrink: 0; /* 保持不变，锁定宽度 */
+    width: 150rpx;
+    max-width: 150rpx; /* 🚨 核心：强制锁死最大宽度，防止被内部文字撑开 */
+    min-width: 150rpx; /* 🚨 核心：强制锁死最小宽度 */
+    flex-shrink: 0;
     height: 100%;
     background-color: #f7f8fa;
+    display: block; /* 🚨 核心：给 scroll-view 加个 display: block */
 
     .item {
       display: flex;
@@ -229,6 +242,7 @@ page {
     flex: 1; /* 右侧自动填满剩下的空间 */
     height: 100%; /* 🚨 核心：必须给 100% 高度才能独立滚动 */
     background-color: #fff;
+    overflow-x: hidden; /* 🚨 核心：防止右侧内容溢出把左边挤扁 */
 
     .banner {
       margin: 20rpx;
