@@ -18,3 +18,16 @@ export type PageParams = {
   /** 页大小: 默认值为 10 */
   pageSize?: number
 }
+
+// src/types/goods.d.ts
+export type GoodsDetail = {
+  id: string
+  name: string
+  price: string
+  picture: string
+  // ... 其他字段根据实际接口补充
+  details: {
+    properties: any[]
+    pictures: string[]
+  }
+}

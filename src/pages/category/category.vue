@@ -138,11 +138,7 @@ onLoad(async () => {
               hover-class="none"
               :url="`/pages/goods/goods?id=${goods.id}`"
             >
-              <image
-                class="image"
-                mode="aspectFill"
-                :src="handleImageUrl(goods.picture)"
-              ></image>
+              <image class="image" mode="aspectFill" :src="handleImageUrl(goods.picture)"></image>
               <view class="name ellipsis">{{ goods.name }}</view>
               <view class="price">
                 <text class="symbol">¥</text>
