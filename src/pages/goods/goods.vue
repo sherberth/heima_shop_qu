@@ -3,9 +3,13 @@ import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { getGoodsByIdAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods' // 引入类型
+//import type { UniHelper } from '@uni-helper/uni-ui-types'
 // 获取屏幕边界到安全区域距离手机（特别是 iPhone）底部都有一个黑色的小横条（Home Indicator）
 // 如果你的底部工具栏（加入购物车那个）贴着屏幕最底下写，按钮就会被小黑条挡住
 // 这个 safeAreaInsets.bottom 就是你手机底部小黑条的高度
+import AddressPanel from './components/AddressPanel.vue'
+import ServicePanel from './components/ServicePanel.vue'
+
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 定义响应式数据（用 GoodsResult 类型，不用 any 了）
 const goodsData = ref<GoodsResult>({} as GoodsResult)
@@ -17,18 +21,48 @@ const getGoodsByIdData = async (id: string) => {
   // 处理返回数据
 }
 // 1. 定义当前轮播图的下标// 轮播图当前下标
-const activeIndex = ref(0)
+const currentIndex = ref(0)
 // 2. 监听轮播图滑动事件
-const onChange = (e: any) => {
-  activeIndex.value = e.detail.current
+// const onChange: UniHelper.SwiperOnChange = (ev) => {
+//   currentIndex.value = ev.detail!.current
+// }
+const onChange = (ev: any) => {
+  currentIndex.value = ev.detail!.current
+}
+// 3. 点击图片预览大图
+function onTapImage(url: string) {
+  uni.previewImage({
+    current: url,
+    // 👇 核心：如果变量叫 goodsData，这里就是 goodsData.value!.mainPictures
+    urls: goodsData.value!.mainPictures,
+  })
 }
 onLoad((options) => {
   // 从 options 里拿正确的 id，并直接传参
   getGoodsByIdData(options?.id || '')
 })
 // 拿到 ID 后，下一步就是拿着这个 ID 去请求商品详情接口了
-// const id = options?.id
-// getGoodsDetailData(id)
+
+// 先用 any，免得报错const popup = ref<any>()
+// 👇 替换原来的 popup 定义，加上类型提示（方便敲代码时出提示）
+// const popup = ref<{
+//   open: (type?: UniHelper.UniPopupType) => void
+//   close: () => void
+// }>()
+const popup = ref<{
+  open: (type?: 'top' | 'center' | 'bottom' | 'left' | 'right') => void
+  close: () => void
+}>()
+// 👇 新增：控制弹窗名字的变量。默认为空
+const popupName = ref<'address' | 'service'>()
+
+// 👇 新增：统一的打开弹窗方法，接收名字作为参数
+const openPopup = (name: typeof popupName.value) => {
+  // 1. 修改当前要渲染的弹窗名字
+  popupName.value = name
+  // 2. 打开弹窗
+  popup.value?.open()
+}
 </script>
 
 <template>
@@ -40,12 +74,12 @@ onLoad((options) => {
         <!-- 👇 加上 @change 监听滑动 -->
         <swiper circular @change="onChange">
           <swiper-item v-for="(item, index) in goodsData?.mainPictures" :key="index">
-            <image :src="item" mode="aspectFill" />
+            <image @tap="onTapImage(item)" mode="aspectFill" :src="item" />
           </swiper-item>
         </swiper>
         <!-- 👇 指示器动态绑定 -->
         <view class="indicator">
-          <text class="current">{{ activeIndex + 1 }}</text>
+          <text class="current">{{ currentIndex + 1 }}</text>
           <text class="split">/</text>
           <text class="total">{{ goodsData?.mainPictures?.length || 0 }}</text>
         </view>
@@ -65,13 +99,15 @@ onLoad((options) => {
       <view class="operation">
         <view class="item arrow">
           <text class="label">选择</text>
-          <text class="text ellipsis"> 囤货4条装（樱花粉+薄荷绿+麻米+雾蓝色） </text>
+          <text class="text ellipsis">请选择商品规格</text>
         </view>
-        <view class="item arrow">
+
+        <!-- 👇 修改：加上 @tap 绑定 address -->
+        <view class="item arrow" @tap="openPopup('address')">
           <text class="label">送至</text>
-          <text class="text ellipsis">京市顺区顺路81号马程序员</text>
+          <text class="text ellipsis">请选择收货地址</text>
         </view>
-        <view class="item arrow">
+        <view class="item arrow" @tap="openPopup('service')">
           <text class="label">服务</text>
           <text class="text ellipsis">无忧退 快速退款 免费包邮</text>
         </view>
@@ -145,6 +181,12 @@ onLoad((options) => {
       <view class="payment">立即购买</view>
     </view>
   </view>
+  <!-- 在 template 的最下面 -->
+  <uni-popup ref="popup" type="bottom" background-color="#fff">
+    <!-- 👇 修改：通过 popupName 判断渲染哪个子组件 -->
+    <AddressPanel v-if="popupName === 'address'" @close="popup?.close()" />
+    <ServicePanel v-if="popupName === 'service'" @close="popup?.close()" />
+  </uni-popup>
 </template>
 
 <style lang="scss">
@@ -363,13 +405,16 @@ page {
   align-items: center;
   box-sizing: content-box;
   .buttons {
+    display: flex;
+    align-items: center;
     view {
-      width: 220rpx;
+      width: 200rpx;
       text-align: center;
-      line-height: 72rpx;
+      line-height: 68rpx;
       font-size: 26rpx;
       color: #fff;
       border-radius: 72rpx;
+      border-radius: 32rpx; /* 或者 16rpx，看你喜欢哪个 */
     }
     .addcart {
       background-color: #ffa868;
@@ -395,11 +440,20 @@ page {
       font-size: 20rpx;
       color: #333;
       background-color: #fff;
+      &::after {
+        border: none;
+      }
     }
     text {
       display: block;
       font-size: 34rpx;
     }
   }
+}
+.popup-content {
+  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom)); /* 兼容老版本iOS */
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom)); /* 兼容新版iOS */
+  background-color: #fff;
+  border-radius: 20rpx 20rpx 0 0; /* 给弹窗加个圆角，更美观 */
 }
 </style>

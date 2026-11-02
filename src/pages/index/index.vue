@@ -101,6 +101,13 @@ const getHomeHotData = async () => {
     } else if (newItem.title === '爆款推荐') {
       newItem.title = '爆款'
     }
+    // 假设“一站买全”的下标是 2 (从 0 开始算)
+    if (newItem.title === '一站买全') {
+      newItem.pictures = [
+        '/static/images/good_small1.png', // 换成你本地好看的图
+        '/static/images/good_small3.png', // 换成你本地好看的图
+      ]
+    }
     // 4. 统一返回加工好的对象
     return newItem
   })
