@@ -1,49 +1,262 @@
 <script setup lang="ts">
+// 1. 引入 Pinia 状态
 import { useMemberStore } from '@/stores'
-import { http } from '@/utils/http'
-
 const memberStore = useMemberStore()
 
-const getData = async () => {
-  // 直接使用 await 调用封装好的 http
-  const res = await http({
-    url: '/home/banner',
-    method: 'GET',
-    header: {},
-  })
+// 2. 获取屏幕边界到安全区域距离（处理刘海屏）
+const { safeAreaInsets } = uni.getSystemInfoSync()
 
-  // 在控制台打印结果
-  console.log('请求成功的数据：', res)
-  // 👇 真正的业务数据在 res.data 里
-  console.log('核心业务数据：', res.result)
-  // 现在你可以直接打印 res.result，并且 VS Code 知道它是个数组
-  console.log('请求成功', res.result)
-}
+// 3. 订单选项静态数据
+const orderTypes = [
+  { type: 1, text: '待付款', icon: 'icon-currency' },
+  { type: 2, text: '待发货', icon: 'icon-gift' },
+  { type: 3, text: '待收货', icon: 'icon-check' },
+  { type: 4, text: '待评价', icon: 'icon-comment' },
+]
 </script>
 
 <template>
-  <view class="my">
-    <view>会员信息：{{ memberStore.profile }}</view>
-    <button
-      @tap="
-        memberStore.setProfile({
-          nickname: '黑马先锋',
-          token: '123233',
-        })
-      "
-      size="mini"
-      plain
-      type="primary"
-    >
-      保存用户信息
-    </button>
-    <button @tap="memberStore.clearProfile()" size="mini" plain type="warn">
-      清理用户信息
-    </button>
-    <button @tap="getData" size="mini" plain type="default">测试请求</button>
-  </view>
+  <scroll-view class="viewport" scroll-y>
+    <!-- 个人资料 -->
+    <view class="profile" :style="{ paddingTop: safeAreaInsets!.top + 'px' }">
+      <!-- 情况1: 已登录 -->
+      <view class="overview" v-if="memberStore.profile">
+        <navigator url="/pagesMember/profile/profile" hover-class="none">
+          <image
+            class="avatar"
+            :src="
+              memberStore.profile.avatar ||
+              'https://api.dicebear.com/7.x/avataaars/png?seed=Felix&size=240'
+            "
+            mode="aspectFill"
+          ></image>
+        </navigator>
+        <view class="meta">
+          <view class="nickname">{{
+            memberStore.profile.nickname || memberStore.profile.account
+          }}</view>
+          <navigator
+            class="extra"
+            url="/pagesMember/profile/profile"
+            hover-class="none"
+          >
+            <text class="update">更新头像昵称</text>
+          </navigator>
+        </view>
+      </view>
+
+      <!-- 情况2: 未登录 -->
+      <view class="overview" v-else>
+        <navigator url="/pages/login/login" hover-class="none">
+          <image
+            class="avatar gray"
+            src="https://api.dicebear.com/7.x/avataaars/png?seed=Felix&size=240"
+            mode="aspectFill"
+          ></image>
+        </navigator>
+        <view class="meta">
+          <navigator
+            url="/pages/login/login"
+            hover-class="none"
+            class="nickname"
+          >
+            未登录
+          </navigator>
+          <view class="extra">
+            <text class="tips">点击登录账号</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 设置按钮 -->
+      <navigator
+        class="settings"
+        url="/pagesMember/settings/settings"
+        hover-class="none"
+      >
+        设置
+      </navigator>
+    </view>
+
+    <!-- 我的订单 -->
+    <view class="orders">
+      <view class="title">
+        我的订单
+        <navigator
+          class="navigator"
+          url="/pagesMember/order/order?type=0"
+          hover-class="none"
+        >
+          查看全部订单<text class="icon-right"></text>
+        </navigator>
+      </view>
+      <view class="section">
+        <!-- 订单列表渲染 -->
+        <navigator
+          v-for="item in orderTypes"
+          :key="item.type"
+          :class="item.icon"
+          :url="`/pagesMember/order/order?type=${item.type}`"
+          class="navigator"
+          hover-class="none"
+        >
+          {{ item.text }}
+        </navigator>
+        <!-- 客服 -->
+        <button class="contact icon-handset" open-type="contact">售后</button>
+      </view>
+    </view>
+
+    <!-- 猜你喜欢 (如果你还没写 XtxGuess 组件，可以先注释掉) -->
+    <view class="guess">
+      <!-- <XtxGuess ref="guessRef" /> -->
+    </view>
+  </scroll-view>
 </template>
 
 <style lang="scss">
-//
+/* 这里统合了讲师在截图里写的所有样式 */
+page {
+  height: 100%;
+  overflow: hidden;
+  background-color: #f7f7f8;
+}
+
+.viewport {
+  height: 100%;
+  background-color: #f7f7f8;
+
+  /* 顶部背景图，讲师用的是网图，可以直接用他的 */
+}
+
+/* 用户信息 */
+.profile {
+  margin-top: 0;
+  position: relative;
+  background: linear-gradient(to bottom, #27ba9b, #2cb694);
+  padding-bottom: 130rpx;
+
+  .overview {
+    display: flex;
+    height: 120rpx;
+    padding: 0 36rpx;
+    color: #fff;
+    margin-top: 100rpx;
+
+    .avatar {
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 50%;
+      background-color: #eee;
+    }
+
+    .gray {
+      filter: grayscale(100%);
+    }
+
+    .meta {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      line-height: 30rpx;
+      padding: 16rpx 0;
+      margin-left: 20rpx;
+
+      .nickname {
+        max-width: 180rpx;
+        margin-bottom: 16rpx;
+        font-size: 30rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .extra {
+        display: flex;
+        font-size: 20rpx;
+      }
+
+      .tips {
+        font-size: 22rpx;
+      }
+
+      .update {
+        padding: 3rpx 10rpx 1rpx;
+        color: rgba(255, 255, 255, 0.8);
+        border: 1rpx solid rgba(255, 255, 255, 0.8);
+        margin-right: 10rpx;
+        border-radius: 30rpx;
+      }
+    }
+  }
+
+  .settings {
+    position: absolute;
+    //bottom: 50px;
+    top: 230rpx;
+    transform: translateY(-20%);
+    right: 40rpx;
+    font-size: 30rpx;
+    color: #fff;
+  }
+}
+
+/* 我的订单 */
+.orders {
+  position: relative;
+  z-index: 99;
+  padding: 30rpx;
+  margin: -40rpx 20rpx 0;
+  background-color: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 6rpx rgba(240, 240, 240, 0.6);
+
+  .title {
+    height: 40rpx;
+    line-height: 40rpx;
+    font-size: 28rpx;
+    color: #1e1e1e;
+
+    .navigator {
+      font-size: 24rpx;
+      color: #939393;
+      float: right;
+    }
+  }
+
+  .section {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 40rpx 20rpx 10rpx;
+
+    .navigator,
+    .contact {
+      text-align: center;
+      font-size: 24rpx;
+      color: #333;
+
+      &::before {
+        display: block;
+        font-size: 60rpx;
+        color: #ff9545;
+      }
+    }
+
+    .contact {
+      padding: 0;
+      margin: 0;
+      border: 0;
+      background-color: transparent;
+      line-height: inherit;
+    }
+  }
+}
+
+/* 猜你喜欢 */
+.guess {
+  background-color: #f7f7f8;
+  margin-top: 20rpx;
+}
 </style>

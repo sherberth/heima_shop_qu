@@ -22,7 +22,8 @@
 		{
 			"path": "pages/my/my",
 			"style": {
-				"navigationBarTitleText": "我的"
+				"navigationBarTitleText": "我的", 
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -90,6 +91,7 @@
 				"text": "我的",
 				"pagePath": "pages/my/my",
 				"iconPath": "static/tabs/user_default.png",
+				//"navigationBarTextStyle":"white",
 				"selectedIconPath": "static/tabs/user_selected.png"
 			}
 		]
