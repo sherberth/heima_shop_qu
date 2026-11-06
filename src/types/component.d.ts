@@ -16,7 +16,7 @@ declare module 'vue' {
 }
 //
 // 组件实例类型
-export type XgxGuessInstance = InstanceType<typeof XgxGuess>
+
 // src/types/component.d.ts
 export interface XgxGuessInstance {
   getMore: () => void

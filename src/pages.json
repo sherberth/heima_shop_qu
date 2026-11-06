@@ -22,7 +22,7 @@
 		{
 			"path": "pages/my/my",
 			"style": {
-				"navigationBarTitleText": "我的", 
+				"navigationBarTitleText": "我的",
 				"navigationStyle": "custom"
 			}
 		},
@@ -48,7 +48,8 @@
 			"path": "pages/hot/hot",
 			"style": {
 				"navigationBarTitleText": "热门"
-			}},
+			}
+		},
 		{
 			"path": "pages/goods/goods",
 			"style": {
@@ -95,5 +96,34 @@
 				"selectedIconPath": "static/tabs/user_selected.png"
 			}
 		]
+	},
+	"subPackages": [
+		{
+			"root": "pagesMember",
+			"pages": [
+				{
+					"path": "settings/settings",
+					"style": {
+						"navigationBarTitleText": "登陆设置"
+					}
+				},
+				{
+					"path": "profile/profile",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarTitleText": "个人信息"
+					}
+				}
+			]
+		}
+	],
+	"preloadRule": {
+		"pages/my/my": {
+			"network": "all",
+			"packages": [
+				"pagesMember"
+			]
+		}
 	}
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 1. 引入 Pinia 状态
 import { useMemberStore } from '@/stores'
+import { useGuessList } from '@/composables'
 const memberStore = useMemberStore()
 
 // 2. 获取屏幕边界到安全区域距离（处理刘海屏）
@@ -13,10 +14,11 @@ const orderTypes = [
   { type: 3, text: '待收货', icon: 'icon-check' },
   { type: 4, text: '待评价', icon: 'icon-comment' },
 ]
+const { guessRef, onScrolltolower } = useGuessList()
 </script>
 
 <template>
-  <scroll-view class="viewport" scroll-y>
+  <scroll-view @scrolltolower="onScrolltolower" class="viewport" scroll-y>
     <!-- 个人资料 -->
     <view class="profile" :style="{ paddingTop: safeAreaInsets!.top + 'px' }">
       <!-- 情况1: 已登录 -->
@@ -109,7 +111,7 @@ const orderTypes = [
 
     <!-- 猜你喜欢 (如果你还没写 XtxGuess 组件，可以先注释掉) -->
     <view class="guess">
-      <!-- <XtxGuess ref="guessRef" /> -->
+      <XgxGuess ref="guessRef" />
     </view>
   </scroll-view>
 </template>
