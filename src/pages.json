@@ -124,7 +124,7 @@
 				{
 					"path": "address-form/address-form",
 					"style": { "navigationBarTitleText": "" 
-					} // 标题留空，后面做
+					} 
 				}
 			]
 		}
