@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { getMemberProfileAPI } from '@/services/profile'
-import type { ProfileDetail } from '@/types/member'
+import { getMemberProfileAPI, putMemberProfileAPI } from '@/services/profile'
+import type { ProfileDetail, Gender } from '@/types/member'
+import { useMemberStore } from '@/stores'
+// 1. 引入 onShow
+import { onShow } from '@dcloudio/uni-app'
 
+const memberStore = useMemberStore()
+// 2. 加上 onShow 钩子
+onShow(() => {
+  // 每次回到这个页面，主动打印一下最新数据，方便你确认
+  console.log('回到我的页面，最新头像是：', memberStore.profile?.avatar)
+})
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
@@ -20,94 +29,120 @@ onLoad(() => {
   getMemberProfileData()
 })
 
+// 👇 下一步：调用修改接口
+// const res = await putMemberProfileAPI(formData)
+// 如果成功：uni.showToast({ title: '修改成功' }); uni.navigateBack();
+
 // ==========================================
 // 3. 表单交互逻辑 (把你之前写的改一下数据源)
 // ==========================================
 
 // 修改头像
-// 修改头像
 const onAvatarChange = () => {
-  // 1. 调用拍照/选择图片
-  uni.chooseMedia({
-    count: 1, // 文件个数
-    mediaType: ['image'], // 文件类型
+  // 1. 先手动弹出微信原生的底部操作菜单
+  uni.showActionSheet({
+    itemList: ['拍照', '从手机相册选择'],
     success: (res) => {
-      // 2. 获取本地路径
-      const { tempFilePath } = res.tempFiles[0]
+      // res.tapIndex 是用户点击的索引：0是拍照，1是相册
+      if (res.tapIndex === 0) {
+        chooseImage('camera')
+      } else if (res.tapIndex === 1) {
+        chooseImage('album')
+      }
+    },
+    fail: () => {
+      // 用户点击了“取消”，什么都不做即可
+      console.log('用户取消了选择')
+    },
+  })
+}
 
-      // 开启 loading 提示
+// 2. 抽离出来的选图和上传逻辑
+const chooseImage = (sourceType: 'camera' | 'album') => {
+  uni.chooseMedia({
+    count: 1,
+    mediaType: ['image'],
+    sourceType: [sourceType], // 💡 关键：根据菜单的选择指定来源
+    success: (res) => {
+      const { tempFilePath } = res.tempFiles[0]
       uni.showLoading({ title: '上传中...' })
 
-      // 3. 文件上传
+      // 3. 上传文件（带降级兜底）
       uni.uploadFile({
-        url: '/member/profile/avatar', // 确保你项目配置了 baseURL，否则这里要写完整地址
-        name: 'file', // 后端接收的文件参数名
+        url: '/member/profile/avatar',
+        name: 'file',
         filePath: tempFilePath,
         header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
-
-        // 👇 💡 核心整合部分开始 👇
+        // ... uni.uploadFile 内部 ...
         success: (res) => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
-            // 真实上传成功
-            try {
-              const avatar = JSON.parse(res.data).result.avatar
-              profile.value!.avatar = avatar
-              uni.showToast({ icon: 'success', title: '更新成功' })
-            } catch (e) {
-              console.error('解析数据失败:', e)
-              uni.showToast({ icon: 'none', title: '解析数据失败' })
-            }
-          } else {
-            // 服务器报错（如当前的 500 阿里云 AccessKey 被禁用）
-            console.error('上传接口返回错误:', res.statusCode, res.data)
+            const avatar = JSON.parse(res.data).result.avatar
 
-            // 💡 降级方案：后端坏了，我们前端直接用手头选中的本地图片顶上去！
-            // 反正等后端修好了，代码也不用改，它自然就会走上面的 200 分支了。
+            // 1. 更新当前页面数据
+            profile.value!.avatar = avatar
+
+            // 2. 💡 讲师的写法：直接同步给 Store 的头像
+            if (memberStore.profile) {
+              memberStore.profile.avatar = avatar
+            }
+
+            uni.showToast({ icon: 'success', title: '更新成功' })
+          } else {
+            // 降级兜底展示本地图片
             profile.value!.avatar = tempFilePath
+            if (memberStore.profile) {
+              memberStore.profile.avatar = tempFilePath // 兜底也同步
+            }
             uni.showToast({ icon: 'success', title: '本地模拟更新成功' })
           }
         },
-        fail: (err) => {
-          // 网络彻底断开或其他原因
-          console.error('uploadFile 调用失败:', err)
-
-          // 同样降级为本地预览
+        fail: () => {
           profile.value!.avatar = tempFilePath
           uni.showToast({ icon: 'success', title: '本地模拟更新成功' })
         },
         complete: () => {
-          uni.hideLoading() // 不管成功失败，关闭 loading
+          uni.hideLoading()
         },
-        // 👆 💡 核心整合部分结束 👆
       })
     },
   })
 }
 
-// 处理性别切换 (修改 profile.value.gender)
-const onGenderChange = (e: any) => {
+// 修改性别
+const onGenderChange: UniHelper.RadioGroupOnChange = (ev) => {
+  // ev.detail.value 的类型是 string，我们需要断言成 Gender 类型
   if (profile.value) {
-    profile.value.gender = e.detail.value
+    profile.value.gender = ev.detail.value as Gender
   }
 }
+
+// 修改生日
+const onBirthdayChange: UniHelper.DatePickerOnChange = (ev) => {
+  if (profile.value) {
+    profile.value.birthday = ev.detail.value
+  }
+}
+
 // 处理昵称修改
 const onNicknameChange = (e: any) => {
   if (profile.value) {
     profile.value.nickname = e.detail.value
   }
 }
-// 处理日期选择 (修改 profile.value.birthday)
-const onBirthdayChange = (e: any) => {
-  if (profile.value) {
-    profile.value.birthday = e.detail.value
-  }
-}
 
 // 处理城市选择 (修改 profile.value.fullLocation)
-const onRegionChange = (e: any) => {
+
+// 💡 1. 新增一个专门存放代码的数组变量（讲师的思路）
+let fullLocationCode: [string, string, string] = ['', '', '']
+
+// 💡 2. 替换原来的 onRegionChange，使用 UniHelper 获取完整类型提示
+const onFullLocationChange: UniHelper.RegionPickerOnChange = (ev) => {
   if (profile.value) {
-    // 小程序返回的是数组，用空格拼接成字符串
-    profile.value.fullLocation = e.detail.value.join(' ')
+    // 修改前端界面显示的文字
+    profile.value.fullLocation = ev.detail.value.join(' ')
+
+    // 提交后端更新的代码数组
+    fullLocationCode = ev.detail.code!
   }
 }
 // 处理职业修改
@@ -117,9 +152,49 @@ const onProfessionChange = (e: any) => {
   }
 }
 // 保存表单 (后续这里会调用修改接口)
-const onSave = () => {
-  console.log('准备保存的数据：', profile.value)
-  uni.showToast({ title: '保存成功', icon: 'success' })
+// 4. 保存表单（只保留这一个 onSave）
+// ==========================================
+const onSubmit = async () => {
+  if (!profile.value) return
+
+  // 解构出需要用的基础数据
+  const { nickname, gender, birthday, profession } = profile.value
+  const [provinceCode, cityCode, countyCode] = fullLocationCode
+  try {
+    uni.showLoading({ title: '保存中...' })
+
+    const res = await putMemberProfileAPI({
+      nickname,
+      gender,
+      birthday,
+      profession,
+      provinceCode,
+      cityCode,
+      countyCode,
+    })
+
+    uni.hideLoading()
+    uni.showToast({ icon: 'success', title: '保存成功' })
+
+    // 同步 Store（保留咱们之前的全局同步逻辑）
+    if (memberStore.profile) {
+      memberStore.profile.nickname = nickname
+      memberStore.profile.gender = gender
+      memberStore.profile.birthday = birthday
+      memberStore.profile.profession = profession
+      if (res && res.result) {
+        Object.assign(memberStore.profile, res.result)
+      }
+    }
+
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 400)
+  } catch (error) {
+    uni.hideLoading()
+    uni.showToast({ icon: 'none', title: '保存失败' })
+    console.error('保存失败:', error)
+  }
 }
 </script>
 
@@ -217,12 +292,11 @@ const onSave = () => {
         <!-- 城市 -->
         <view class="form-item">
           <text class="label">城市</text>
-          <!-- 💡 加上 @change 事件 -->
           <picker
             class="picker"
             mode="region"
             :value="(profile?.fullLocation || '').split(' ')"
-            @change="onRegionChange"
+            @change="onFullLocationChange"
           >
             <view v-if="profile?.fullLocation">{{
               profile?.fullLocation
@@ -245,7 +319,7 @@ const onSave = () => {
       </view>
 
       <!-- 提交按钮 (加上点击事件) -->
-      <button class="form-button" @tap="onSave">保存</button>
+      <button class="form-button" @tap="onSubmit">保存</button>
     </view>
   </view>
 </template>

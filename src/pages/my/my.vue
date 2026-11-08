@@ -108,7 +108,33 @@ const { guessRef, onScrolltolower } = useGuessList()
         <button class="contact icon-handset" open-type="contact">售后</button>
       </view>
     </view>
-
+    <!-- 常用工具区 -->
+    <view class="tools">
+      <view class="title"><text>常用工具</text></view>
+      <view class="list">
+        <!-- 👇 💡 这里就是地址列表的入口 -->
+        <navigator
+          class="item"
+          url="/pagesMember/address/address"
+          hover-class="none"
+        >
+          <text class="icon icon-location"></text>
+          <text>收货地址</text>
+        </navigator>
+        <navigator class="item" url="/pagesMember/service" hover-class="none">
+          <text class="icon icon-service"></text>
+          <text>联系客服</text>
+        </navigator>
+        <navigator
+          class="item"
+          url="/pagesMember/settings/settings"
+          hover-class="none"
+        >
+          <text class="icon icon-setting"></text>
+          <text>设置</text>
+        </navigator>
+      </view>
+    </view>
     <!-- 猜你喜欢 (如果你还没写 XtxGuess 组件，可以先注释掉) -->
     <view class="guess">
       <XgxGuess ref="guessRef" />
@@ -252,6 +278,40 @@ page {
       border: 0;
       background-color: transparent;
       line-height: inherit;
+    }
+  }
+}
+
+/* 常用工具区 */
+.tools {
+  background-color: #fff;
+  margin: 20rpx;
+  border-radius: 20rpx;
+  padding: 20rpx 30rpx;
+
+  .title {
+    padding-bottom: 20rpx;
+    border-bottom: 1rpx solid #eee;
+    font-size: 28rpx;
+    color: #333;
+  }
+
+  .list {
+    display: flex;
+    padding-top: 20rpx;
+
+    .item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 24rpx;
+      color: #333;
+
+      text:first-child {
+        font-size: 40rpx;
+        margin-bottom: 10rpx;
+      }
     }
   }
 }

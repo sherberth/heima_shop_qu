@@ -11,7 +11,7 @@ type BaseProfile = {
 }
 
 /** 小程序登录 登录用户信息 */
-export type LoginResult = BaseProfile & {
+export type LoginResult = ProfileDetail & {
   /** 手机号 */
   mobile: string
   /** 登录凭证 */
@@ -31,4 +31,8 @@ export type ProfileDetail = BaseProfile & {
   fullLocation?: string
   /** 职业 */
   profession?: string
+  // 👇 💡 新增下面三个字段
+  provinceCode?: string
+  cityCode?: string
+  countyCode?: string
 }

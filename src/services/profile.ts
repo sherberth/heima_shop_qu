@@ -10,3 +10,20 @@ export const getMemberProfileAPI = () => {
     url: '/member/profile',
   })
 }
+
+export type ProfileParams = {
+  nickname?: string
+  gender?: string
+  birthday?: string
+  profession?: string
+  provinceCode?: string
+  cityCode?: string
+  countyCode?: string
+}
+export const putMemberProfileAPI = (data: ProfileParams) => {
+  return http({
+    method: 'PUT',
+    url: '/member/profile',
+    data,
+  })
+}
