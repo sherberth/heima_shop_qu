@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getGoodsByIdAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods' // 引入类型
 //import type { UniHelper } from '@uni-helper/uni-ui-types'
+import type { SkuPopupLocaldata, SkuPopupInstance } from '@/types/components'
 // 获取屏幕边界到安全区域距离手机（特别是 iPhone）底部都有一个黑色的小横条（Home Indicator）
 // 如果你的底部工具栏（加入购物车那个）贴着屏幕最底下写，按钮就会被小黑条挡住
 // 这个 safeAreaInsets.bottom 就是你手机底部小黑条的高度
@@ -12,39 +13,65 @@ import ServicePanel from './components/ServicePanel.vue'
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 定义响应式数据（用 GoodsResult 类型，不用 any 了）
+const query = defineProps<{
+  id: string
+}>()
 const goodsData = ref<GoodsResult>({} as GoodsResult)
+const localdata = ref<SkuPopupLocaldata>({} as SkuPopupLocaldata)
 // 接收页面参数
 //  用 onLoad 接收路由参数
-const getGoodsByIdData = async (id: string) => {
-  const res = await getGoodsByIdAPI(id)
+// 核心逻辑：请求数据并转换格式 (只保留这一个正确的函数)
+const getGoodsByIdData = async () => {
+  // 直接用 query.id 获取参数
+  const res = await getGoodsByIdAPI(query.id)
   goodsData.value = res.result
-  // 处理返回数据
+
+  // 转换 SKU 组件所需格式
+  localdata.value = {
+    _id: res.result.id,
+    name: res.result.name,
+    goods_thumb: res.result.mainPictures[0],
+    spec_list: res.result.specs.map((v) => ({
+      name: v.name,
+      list: v.values,
+    })),
+    sku_list: res.result.skus.map((v) => ({
+      _id: v.id,
+      goods_id: res.result.id,
+      goods_name: res.result.name,
+      image: v.picture,
+      price: v.price * 100,
+      stock: v.inventory,
+      sku_name_arr: v.specs.map((vv) => vv.valueName),
+    })),
+  }
 }
+
 // 1. 定义当前轮播图的下标// 轮播图当前下标
 const currentIndex = ref(0)
 // 2. 监听轮播图滑动事件
 // const onChange: UniHelper.SwiperOnChange = (ev) => {
 //   currentIndex.value = ev.detail!.current
 // }
-const onChange = (ev: any) => {
+const onChange: UniHelper.SwiperOnChange = (ev: any) => {
   currentIndex.value = ev.detail!.current
 }
 // 3. 点击图片预览大图
 function onTapImage(url: string) {
   uni.previewImage({
     current: url,
-    // 👇 核心：如果变量叫 goodsData，这里就是 goodsData.value!.mainPictures
-    urls: goodsData.value!.mainPictures,
+    // 如果变量叫 goodsData，这里就是 goodsData.value!.mainPictures
+    urls: goodsData.value?.mainPictures || [],
   })
 }
-onLoad((options) => {
+onLoad(() => {
   // 从 options 里拿正确的 id，并直接传参
-  getGoodsByIdData(options?.id || '')
+  getGoodsByIdData()
 })
 // 拿到 ID 后，下一步就是拿着这个 ID 去请求商品详情接口了
 
 // 先用 any，免得报错const popup = ref<any>()
-// 👇 替换原来的 popup 定义，加上类型提示（方便敲代码时出提示）
+// 替换原来的 popup 定义，加上类型提示（方便敲代码时出提示）
 // const popup = ref<{
 //   open: (type?: UniHelper.UniPopupType) => void
 //   close: () => void
@@ -53,31 +80,100 @@ const popup = ref<{
   open: (type?: 'top' | 'center' | 'bottom' | 'left' | 'right') => void
   close: () => void
 }>()
-// 👇 新增：控制弹窗名字的变量。默认为空
+// 控制弹窗名字的变量。默认为空
 const popupName = ref<'address' | 'service'>()
 
-// 👇 新增：统一的打开弹窗方法，接收名字作为参数
+// 统一的打开弹窗方法，接收名字作为参数
 const openPopup = (name: typeof popupName.value) => {
   // 1. 修改当前要渲染的弹窗名字
   popupName.value = name
   // 2. 打开弹窗
   popup.value?.open()
 }
+// 控制 SKU 弹窗显示隐藏
+const isShowSku = ref(false)
+// 打开 SKU 弹窗的方法（你在页面底部加入购物车按钮时调用）
+enum SkuMode {
+  Both = 1, // 都显示
+  Cart = 2, // 只显示购物车
+  Buy = 3, // 只显示立即购买
+}
+
+// 💡 2. 定义当前模式，默认都显示
+const mode = ref<SkuMode>(SkuMode.Both)
+// 💡 3. 重写打开 SKU 弹窗的函数（对齐图5）
+const openSkuPopup = (val: SkuMode) => {
+  mode.value = val
+  isShowSku.value = true
+}
+// 点击加入购物车
+const addCart = (selectShop: any) => {
+  console.log('加入购物车的数据：', selectShop)
+  uni.showToast({ title: '加入购物车成功', icon: 'none' })
+  setTimeout(() => {
+    isShowSku.value = false
+  }, 300)
+}
+
+// 点击立即购买
+const buyNow = (selectShop: any) => {
+  console.log('立即购买的数据：', selectShop)
+  uni.showToast({ title: '准备去支付', icon: 'none' })
+}
+// 💡 2. 定义弹窗组件实例 Ref
+const skuPopupRef = ref<SkuPopupInstance>()
+
+// 💡 3. 计算当前选中的规格文本
+const selectArrText = computed(() => {
+  // 如果实例存在，且选中的数组有长度，就用空格拼接并去除两端空格
+  // 如果没选，或者被清空了（取消选择），则返回默认提示文字
+  return skuPopupRef.value?.selectArr?.join(' ').trim() || '请选择商品规格'
+})
+const activeStyle = computed(() => {
+  // 如果当前是“立即购买”模式，选中标签显示绿色
+  if (mode.value === SkuMode.Buy) {
+    return {
+      color: '#27BA9B',
+      borderColor: '#27BA9B',
+      backgroundColor: '#E9F8F5',
+    }
+  }
+  // 如果是“加入购物车”模式，显示橙色
+  return {
+    color: '#FFA868',
+    borderColor: '#FFA868',
+    backgroundColor: '#FFF3E9',
+  }
+})
 </script>
 
 <template>
+  <vk-data-goods-sku-popup
+    v-model="isShowSku"
+    :mode="mode"
+    :localdata="localdata"
+    add-cart-background-color="#FFA868"
+    buy-now-background-color="#27BA9B"
+    ref="skuPopupRef"
+    :actived-style="activeStyle"
+    @add-cart="addCart"
+    @buy-now="buyNow"
+  />
   <scroll-view scroll-y class="viewport">
     <!-- 基本信息 -->
     <view class="goods">
       <!-- 商品主图 -->
       <view class="preview">
-        <!-- 👇 加上 @change 监听滑动 -->
+        <!-- 加上 @change 监听滑动 -->
         <swiper circular @change="onChange">
-          <swiper-item v-for="(item, index) in goodsData?.mainPictures" :key="index">
+          <swiper-item
+            v-for="(item, index) in goodsData?.mainPictures"
+            :key="index"
+          >
             <image @tap="onTapImage(item)" mode="aspectFill" :src="item" />
           </swiper-item>
         </swiper>
-        <!-- 👇 指示器动态绑定 -->
+        <!-- 指示器动态绑定 -->
         <view class="indicator">
           <text class="current">{{ currentIndex + 1 }}</text>
           <text class="split">/</text>
@@ -95,19 +191,18 @@ const openPopup = (name: typeof popupName.value) => {
         <view class="desc" v-if="goodsData?.desc">{{ goodsData.desc }}</view>
       </view>
 
-      <!-- 操作面板 (保持静态，等后续有接口再换) -->
+      <!-- 操作面板 (保持留选择、送至、服务) -->
       <view class="operation">
-        <view class="item arrow">
+        <!-- 💡 使用内联箭头函数写法，和讲师图4对齐 -->
+        <view class="item arrow" @tap="($event) => openSkuPopup(SkuMode.Both)">
           <text class="label">选择</text>
-          <text class="text ellipsis">请选择商品规格</text>
+          <text class="text ellipsis">{{ selectArrText }}</text>
         </view>
-
-        <!-- 👇 修改：加上 @tap 绑定 address -->
-        <view class="item arrow" @tap="openPopup('address')">
+        <view class="item arrow" @tap="($event) => openPopup('address')">
           <text class="label">送至</text>
           <text class="text ellipsis">请选择收货地址</text>
         </view>
-        <view class="item arrow" @tap="openPopup('service')">
+        <view class="item arrow" @tap="($event) => openPopup('service')">
           <text class="label">服务</text>
           <text class="text ellipsis">无忧退 快速退款 免费包邮</text>
         </view>
@@ -122,7 +217,11 @@ const openPopup = (name: typeof popupName.value) => {
       <view class="content">
         <view class="properties">
           <!-- 👇 属性详情循环渲染 -->
-          <view class="item" v-for="(item, index) in goodsData?.details?.properties" :key="index">
+          <view
+            class="item"
+            v-for="(item, index) in goodsData?.details?.properties"
+            :key="index"
+          >
             <text class="label">{{ item.name }}</text>
             <text class="value">{{ item.value }}</text>
           </view>
@@ -143,7 +242,7 @@ const openPopup = (name: typeof popupName.value) => {
         <text>同类推荐</text>
       </view>
       <view class="content">
-        <!-- 👇 同类推荐循环渲染 -->
+        <!-- 同类推荐循环渲染 -->
         <navigator
           v-for="item in goodsData?.similarProducts"
           :key="item.id"
@@ -168,22 +267,32 @@ const openPopup = (name: typeof popupName.value) => {
   </scroll-view>
 
   <!-- 用户操作 -->
-  <view class="toolbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
+  <view
+    class="toolbar"
+    :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }"
+  >
     <view class="icons">
       <button class="icons-button"><text class="icon-heart"></text>收藏</button>
       <button class="icons-button" open-type="contact">
         <text class="icon-handset"></text>客服
       </button>
-      <navigator class="icons-button"><text class="icon-cart"></text>购物车</navigator>
+      <navigator class="icons-button"
+        ><text class="icon-cart"></text>购物车</navigator
+      >
     </view>
     <view class="buttons">
-      <view class="addcart">加入购物车</view>
-      <view class="payment">立即购买</view>
+      <view @tap="($event) => openSkuPopup(SkuMode.Cart)" class="addcart"
+        >加入购物车</view
+      >
+      <!-- 传入 SkuMode.Buy -->
+      <view @tap="($event) => openSkuPopup(SkuMode.Buy)" class="payment"
+        >立即购买</view
+      >
     </view>
   </view>
   <!-- 在 template 的最下面 -->
   <uni-popup ref="popup" type="bottom" background-color="#fff">
-    <!-- 👇 修改：通过 popupName 判断渲染哪个子组件 -->
+    <!--修改：通过 popupName 判断渲染哪个子组件 -->
     <AddressPanel v-if="popupName === 'address'" @close="popup?.close()" />
     <ServicePanel v-if="popupName === 'service'" @close="popup?.close()" />
   </uni-popup>
@@ -238,11 +347,14 @@ page {
 }
 
 /* 商品信息 */
+/* 商品信息 */
 .goods {
   background-color: #fff;
+
   .preview {
     height: 750rpx;
     position: relative;
+
     .indicator {
       height: 40rpx;
       padding: 0 24rpx;
@@ -252,6 +364,7 @@ page {
       position: absolute;
       bottom: 30rpx;
       right: 30rpx;
+
       .current {
         font-size: 26rpx;
       }
@@ -263,7 +376,7 @@ page {
         font-size: 24rpx;
       }
     }
-  }
+  } /* 👈 💡 核心修复：加上这个 } 把 preview 闭合掉！ */
 
   .meta {
     position: relative;
@@ -326,7 +439,7 @@ page {
       }
     }
   }
-}
+} /* 👈 .goods 的大括号到这里结束 */
 
 /* 商品详情 */
 .detail {
@@ -451,7 +564,9 @@ page {
   }
 }
 .popup-content {
-  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom)); /* 兼容老版本iOS */
+  padding-bottom: calc(
+    30rpx + constant(safe-area-inset-bottom)
+  ); /* 兼容老版本iOS */
   padding-bottom: calc(30rpx + env(safe-area-inset-bottom)); /* 兼容新版iOS */
   background-color: #fff;
   border-radius: 20rpx 20rpx 0 0; /* 给弹窗加个圆角，更美观 */
