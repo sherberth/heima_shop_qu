@@ -3,11 +3,13 @@ import { onLoad } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import { getGoodsByIdAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods' // 引入类型
+import type { SkuPopupEvent } from '@/types/components'
 //import type { UniHelper } from '@uni-helper/uni-ui-types'
 import type { SkuPopupLocaldata, SkuPopupInstance } from '@/types/components'
 // 获取屏幕边界到安全区域距离手机（特别是 iPhone）底部都有一个黑色的小横条（Home Indicator）
 // 如果你的底部工具栏（加入购物车那个）贴着屏幕最底下写，按钮就会被小黑条挡住
 // 这个 safeAreaInsets.bottom 就是你手机底部小黑条的高度
+import { postMemberCartAPI } from '@/services/cart'
 import AddressPanel from './components/AddressPanel.vue'
 import ServicePanel from './components/ServicePanel.vue'
 
@@ -107,14 +109,39 @@ const openSkuPopup = (val: SkuMode) => {
   isShowSku.value = true
 }
 // 点击加入购物车
-const addCart = (selectShop: any) => {
-  console.log('加入购物车的数据：', selectShop)
-  uni.showToast({ title: '加入购物车成功', icon: 'none' })
-  setTimeout(() => {
+const onAddCart = async (ev: SkuPopupEvent) => {
+  // 💡 1. 第一道防线：前端校验（防呆）
+  if (ev.stock <= 0) {
+    return uni.showToast({ title: '该商品已售罄', icon: 'none' })
+  }
+  if (ev.buy_num > ev.stock) {
+    return uni.showToast({ title: '购买数量超过库存', icon: 'none' })
+  }
+
+  try {
+    // 💡 2. 开启 Loading，防止用户连点
+    uni.showLoading({ title: '加入中...' })
+
+    // 3. 调用接口，传入选中的 skuId 和数量
+    await postMemberCartAPI({
+      skuId: ev._id,
+      count: ev.buy_num,
+    })
+
+    uni.hideLoading()
+
+    // 成功提示
+    uni.showToast({ title: '添加成功', icon: 'success' })
+
+    // 关闭 SKU 弹窗
     isShowSku.value = false
-  }, 300)
+  } catch (error) {
+    uni.hideLoading()
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+  }
 }
 
+// 立即购
 // 点击立即购买
 const buyNow = (selectShop: any) => {
   console.log('立即购买的数据：', selectShop)
@@ -156,7 +183,7 @@ const activeStyle = computed(() => {
     buy-now-background-color="#27BA9B"
     ref="skuPopupRef"
     :actived-style="activeStyle"
-    @add-cart="addCart"
+    @add-cart="onAddCart"
     @buy-now="buyNow"
   />
   <scroll-view scroll-y class="viewport">
@@ -276,9 +303,13 @@ const activeStyle = computed(() => {
       <button class="icons-button" open-type="contact">
         <text class="icon-handset"></text>客服
       </button>
-      <navigator class="icons-button"
-        ><text class="icon-cart"></text>购物车</navigator
+      <navigator
+        class="icons-button"
+        url="/pages/cart/cart2"
+        open-type="navigate"
       >
+        <text class="icon-cart"></text>购物车
+      </navigator>
     </view>
     <view class="buttons">
       <view @tap="($event) => openSkuPopup(SkuMode.Cart)" class="addcart"

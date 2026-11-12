@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { ref, computed } from 'vue'
+import { onShow, onLoad } from '@dcloudio/uni-app'
 // 💡 引入删除接口
 import {
   getMemberAddressAPI,
   deleteMemberAddressByIDAPI,
 } from '@/services/address'
 import type { AddressItem } from '@/types/address'
+import { useAddressStore } from '@/stores'
+const addressStore = useAddressStore() //
 
 const addressList = ref<AddressItem[]>([])
+const isFromOrder = ref(false)
 
 const getMemberAddressData = async () => {
   const res = await getMemberAddressAPI()
@@ -62,46 +65,67 @@ const onDeleteAddress = (id: string) => {
     },
   })
 }
+const onSelectAddress = (item: any) => {
+  if (isFromOrder.value) {
+    addressStore.changeSelectedAddress(item)
+    uni.navigateBack()
+  } else {
+    // 从“我的”进来，点整行给个提示，引导用户去点修改
+    uni.showToast({ title: '请点击右侧修改按钮', icon: 'none' })
+  }
+}
+onLoad((options) => {
+  if (options?.from === 'order') {
+    isFromOrder.value = true
+  }
+})
 </script>
 
 <template>
   <view class="viewport">
     <scroll-view class="scroll-view" scroll-y>
       <view v-if="addressList.length > 0" class="address">
-        <view class="address-list">
-          <!-- 组件包裹 -->
-          <uni-swipe-action>
-            <!-- 💡 2. 里面包一层 template 做循环 -->
-            <template v-for="item in addressList" :key="item.id">
-              <uni-swipe-action-item
-                :right-options="swipeOptions"
-                @click="onSwipeClick($event, item.id)"
+        <uni-swipe-action class="address-list">
+          <uni-swipe-action-item
+            class="item"
+            v-for="item in addressList"
+            :key="item.id"
+          >
+            <!-- 💡 1. 给整行绑定点击选中事件 -->
+            <view class="item-content" @tap="($event) => onSelectAddress(item)">
+              <view class="user">
+                {{ item.receiver }}
+                <text class="contact">{{ item.contact }}</text>
+                <text v-if="item.isDefault === 1" class="badge">默认</text>
+              </view>
+              <view class="locate"
+                >{{ item.fullLocation }} {{ item.address }}</view
               >
-                <view class="item">
-                  <view class="item-content">
-                    <view class="user">
-                      {{ item.receiver }}
-                      <text class="contact">{{ item.contact }}</text>
-                      <text v-if="item.isDefault === 1" class="badge"
-                        >默认</text
-                      >
-                    </view>
-                    <view class="locate"
-                      >{{ item.fullLocation }} {{ item.address }}</view
-                    >
-                    <navigator
-                      class="edit"
-                      hover-class="none"
-                      :url="`/pagesMember/address-form/address-form?id=${item.id}`"
-                    >
-                      修改
-                    </navigator>
-                  </view>
-                </view>
-              </uni-swipe-action-item>
+
+              <!-- 💡 2. 修改按钮加上 @tap.stop，防止触发外层的选中跳转 -->
+              <navigator
+                class="edit"
+                hover-class="none"
+                :url="`/pagesMember/address-form/address-form?id=${item.id}`"
+                @tap.stop="() => {}"
+              >
+                修改
+              </navigator>
+            </view>
+
+            <!-- 💡 3. 使用插槽实现左滑删除 -->
+            <template #right>
+              <view class="cart-swipe-right">
+                <button
+                  @tap="($event) => onDeleteAddress(item.id)"
+                  class="delete-button"
+                >
+                  删除
+                </button>
+              </view>
             </template>
-          </uni-swipe-action>
-        </view>
+          </uni-swipe-action-item>
+        </uni-swipe-action>
       </view>
       <view v-else class="blank">暂无收货地址</view>
     </scroll-view>
@@ -198,23 +222,33 @@ page {
   color: #333;
 }
 
-/* 右侧删除按钮 (讲师截图里有这个样式，留给后续滑动删除用) */
-// .item-right {
-//   height: 100%;
+/* 左滑出来的删除按钮 */
+.cart-swipe-right {
+  height: 100%;
+  display: flex;
+  align-items: center;
 
-//   .delete-button {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     width: 50px;
-//     height: 100%;
-//     font-size: 28rpx;
-//     color: #fff;
-//     border-radius: 0;
-//     padding: 0;
-//     background-color: #cf4444;
-//   }
-// }
+  .delete-button {
+    /* 💡 必须强制撑满高度和宽度 */
+    height: 100% !important;
+    width: 150rpx !important;
+    border-radius: 0 !important;
+    background-color: #cf4444 !important;
+    color: #fff !important;
+    font-size: 28rpx !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    /* 💡 去掉小程序 button 自带的边框 */
+    &::after {
+      border: none !important;
+    }
+  }
+}
 
 .blank {
   margin-top: 300rpx;

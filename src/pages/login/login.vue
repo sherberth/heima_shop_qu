@@ -17,6 +17,7 @@ onLoad(async () => {
 
 // 3. 核心枢纽：登录成功后的统一处理函数
 const loginSuccess = (profile: LoginResult) => {
+  //const memberStore = useMemberStore()
   // 保存会员信息到 Pinia（插件会自动持久化到本地）
   memberStore.setProfile(profile)
 

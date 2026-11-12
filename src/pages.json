@@ -33,6 +33,12 @@
 			}
 		},
 		{
+			"path": "pages/cart/cart2",
+			"style": {
+				"navigationBarTitleText": "购物车"
+			}
+		},
+		{
 			"path": "pages/category/category",
 			"style": {
 				"navigationBarTitleText": "分类台"
@@ -123,8 +129,20 @@
 				},
 				{
 					"path": "address-form/address-form",
-					"style": { "navigationBarTitleText": "" 
-					} 
+					"style": {
+						"navigationBarTitleText": ""
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesOrder",
+			"pages": [
+				{
+					"path": "create/create",
+					"style": {
+						"navigationBarTitleText": "填写订单"
+					}
 				}
 			]
 		}
@@ -135,6 +153,11 @@
 			"packages": [
 				"pagesMember"
 			]
-		}
+		},"pages/cart/cart": {  // 💡 新增：进入购物车时，后台偷偷下载订单分包
+			"network": "all",
+			"packages": [
+				"pagesOrder"
+			]
 	}
+}
 }

@@ -22,3 +22,10 @@ export interface XgxGuessInstance {
   getMore: () => void
   resetData: () => void
 }
+// 在 components.d.ts 最下面加上这个
+/** SKU 选中事件对象 */
+export type SkuPopupEvent = {
+  _id: string
+  buy_num: number
+  [key: string]: any // 其他字段
+}
