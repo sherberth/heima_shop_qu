@@ -15,7 +15,7 @@ console.log(props.list)
     <!-- 暂时写死循环 4 次，用来占位测试样式 -->
     <view class="item" v-for="item in list" :key="item.id">
       <view class="title">
-        <!-- 👈 写死的文字改为动态绑定 {{ item.title }} 和 {{ item.alt }} -->
+        <!-- 写死的文字改为动态绑定 {{ item.title }} 和 {{ item.alt }} -->
         <text class="title-text">{{ item.title }}</text>
         <text class="title-desc">{{ item.alt }}</text>
       </view>
@@ -26,7 +26,7 @@ console.log(props.list)
         class="cards"
       >
         <!-- 写死的两张网图 -->
-        <!-- 👈 改动：删掉写死的两个 <image>，改为内层 v-for 循环图片数组 -->
+        <!-- 改动：删掉写死的两个 <image>，改为内层 v-for 循环图片数组 -->
         <image
           v-for="src in item.pictures"
           :key="src"

@@ -9,3 +9,18 @@ export const getMemberOrderPreAPI = () => {
     url: '/member/order/pre', // 💡 注意这里的路径不要带 T
   })
 }
+/**
+ * 填写订单-获取立即购买订单 (立即购买)
+ * @param data 请求参数
+ */
+export const getMemberOrderPreNowAPI = (data: {
+  skuId: string
+  count: string
+  addressId?: string
+}) => {
+  return http<OrderPreResult>({
+    method: 'GET',
+    url: '/member/order/pre/now',
+    data,
+  })
+}

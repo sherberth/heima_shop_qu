@@ -82,7 +82,7 @@ onLoad(() => {
 // 所在地区选择事件
 const onRegionChange: UniHelper.RegionPickerOnChange = (ev) => {
   // 💡 讲师图5的 console.log(ev.detail)
-  //console.log('地区选择器返回值：', ev.detail)
+  console.log('地区选择器返回值：', ev.detail)
 
   form.value.fullLocation = ev.detail.value.join(' ')
   const [provinceCode, cityCode, countyCode] = ev.detail.code!
@@ -137,7 +137,7 @@ const onSubmit = async () => {
 
 <template>
   <view class="content">
-    <!-- 💡 引入 uni-forms 组件 -->
+    <!-- 引入 uni-forms 组件 -->
     <uni-forms :rules="rules" :model="form" ref="formRef">
       <uni-forms-item name="receiver" class="form-item">
         <text class="label">收货人</text>
@@ -293,6 +293,9 @@ page {
   .picker {
     flex: 1;
     font-size: 28rpx;
+    height: 100%; /*  强制撑满高度 */
+    display: flex;
+    align-items: center;
   }
 
   .placeholder {

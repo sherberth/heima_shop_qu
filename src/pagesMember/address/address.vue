@@ -8,7 +8,7 @@ import {
 } from '@/services/address'
 import type { AddressItem } from '@/types/address'
 import { useAddressStore } from '@/stores'
-const addressStore = useAddressStore() //
+const addressStore = useAddressStore() //这个变量与create.vue的相同
 
 const addressList = ref<AddressItem[]>([])
 const isFromOrder = ref(false)
@@ -65,9 +65,11 @@ const onDeleteAddress = (id: string) => {
     },
   })
 }
+//改地址
 const onSelectAddress = (item: any) => {
   if (isFromOrder.value) {
     addressStore.changeSelectedAddress(item)
+    //返回上一页
     uni.navigateBack()
   } else {
     // 从“我的”进来，点整行给个提示，引导用户去点修改
@@ -91,7 +93,7 @@ onLoad((options) => {
             v-for="item in addressList"
             :key="item.id"
           >
-            <!-- 💡 1. 给整行绑定点击选中事件 -->
+            <!-- 1. 给整行绑定点击选中事件 -->
             <view class="item-content" @tap="($event) => onSelectAddress(item)">
               <view class="user">
                 {{ item.receiver }}
@@ -102,7 +104,7 @@ onLoad((options) => {
                 >{{ item.fullLocation }} {{ item.address }}</view
               >
 
-              <!-- 💡 2. 修改按钮加上 @tap.stop，防止触发外层的选中跳转 -->
+              <!-- 2. 修改按钮加上 @tap.stop，防止触发外层的选中跳转 -->
               <navigator
                 class="edit"
                 hover-class="none"
@@ -113,7 +115,7 @@ onLoad((options) => {
               </navigator>
             </view>
 
-            <!-- 💡 3. 使用插槽实现左滑删除 -->
+            <!-- 3. 使用插槽实现左滑删除 -->
             <template #right>
               <view class="cart-swipe-right">
                 <button

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMemberOrderPreAPI } from '@/services/order'
+import { getMemberOrderPreAPI, getMemberOrderPreNowAPI } from '@/services/order'
 import type { OrderPreResult } from '@/types/order'
 // 获取屏幕边界到安全区域距离
 import { useAddressStore } from '@/stores'
-const addressStore = useAddressStore() // 💡 实例化 Store
+
+const addressStore = useAddressStore() // 💡 实例化 Store与address.vue同名
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
 // 订单备注
@@ -28,6 +29,11 @@ const activeDelivery = computed(() => deliveryList.value[activeIndex.value])
 const onChangeDelivery: UniHelper.SelectorPickerOnChange = (ev) => {
   activeIndex.value = ev.detail.value
 }
+
+const query = defineProps<{
+  skuId?: string
+  count?: string
+}>()
 // 💡 1. 定义订单数据变量 (类型后续再补，先用 any)
 //const orderPre = ref<any>({})
 const orderPre = ref<OrderPreResult>()
@@ -35,20 +41,32 @@ const orderPre = ref<OrderPreResult>()
 const getMemberOrderPreData = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
-    const res = await getMemberOrderPreAPI()
 
-    // 💡 第二道防线：预订单数据检查
+    let res
+    // 💡 核心整合点：根据参数决定走哪条线
+    if (query.count && query.skuId) {
+      // 1. 立即购买线
+      res = await getMemberOrderPreNowAPI({
+        count: query.count,
+        skuId: query.skuId,
+      })
+    } else {
+      // 2. 购物车结算线
+      res = await getMemberOrderPreAPI()
+    }
+
+    // 💡 你的第二道防线：无论走哪条线，都做一次防呆检查
     const goods = res.result.goods || []
     if (goods.length === 0) {
       uni.hideLoading()
-      uni.showToast({ title: '购物车有无效商品', icon: 'none' })
-      // 延迟一秒后，自动把用户踢回上一页（购物车）
+      uni.showToast({ title: '订单无有效商品', icon: 'none' })
       setTimeout(() => {
         uni.navigateBack()
       }, 1000)
       return
     }
 
+    // 3. 统一赋值
     orderPre.value = res.result
     uni.hideLoading()
   } catch (error) {
@@ -69,6 +87,7 @@ const selectedAddress = computed(() => {
   }
   return undefined
 })
+
 onLoad(() => {
   getMemberOrderPreData()
 })
@@ -76,7 +95,6 @@ onLoad(() => {
 
 <template>
   <view class="viewport">
-    <!-- 收货地址 -->
     <!-- 收货地址 -->
     <view
       v-if="selectedAddress"

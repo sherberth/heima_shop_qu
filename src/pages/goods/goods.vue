@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import { getGoodsByIdAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods' // 引入类型
@@ -12,7 +12,10 @@ import type { SkuPopupLocaldata, SkuPopupInstance } from '@/types/components'
 import { postMemberCartAPI } from '@/services/cart'
 import AddressPanel from './components/AddressPanel.vue'
 import ServicePanel from './components/ServicePanel.vue'
+import { useAddressStore } from '@/stores'
 
+// 在全局变量区域实例化：
+const addressStore = useAddressStore()
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 定义响应式数据（用 GoodsResult 类型，不用 any 了）
 const query = defineProps<{
@@ -119,7 +122,7 @@ const onAddCart = async (ev: SkuPopupEvent) => {
   }
 
   try {
-    // 💡 2. 开启 Loading，防止用户连点
+    // 2. 开启 Loading，防止用户连点
     uni.showLoading({ title: '加入中...' })
 
     // 3. 调用接口，传入选中的 skuId 和数量
@@ -129,7 +132,6 @@ const onAddCart = async (ev: SkuPopupEvent) => {
     })
 
     uni.hideLoading()
-
     // 成功提示
     uni.showToast({ title: '添加成功', icon: 'success' })
 
@@ -143,14 +145,17 @@ const onAddCart = async (ev: SkuPopupEvent) => {
 
 // 立即购
 // 点击立即购买
-const buyNow = (selectShop: any) => {
-  console.log('立即购买的数据：', selectShop)
-  uni.showToast({ title: '准备去支付', icon: 'none' })
+
+const onBuyNow = (ev: SkuPopupEvent) => {
+  // 💡 确保使用了反引号，并且前面没拼错
+  const url = `/pagesOrder/create/create?skuId=${ev._id}&count=${ev.buy_num}`
+  console.log('准备跳转的URL：', url) // 打印出来看看对不对
+  uni.navigateTo({ url })
 }
-// 💡 2. 定义弹窗组件实例 Ref
+//  2. 定义弹窗组件实例 Ref
 const skuPopupRef = ref<SkuPopupInstance>()
 
-// 💡 3. 计算当前选中的规格文本
+// 3. 计算当前选中的规格文本
 const selectArrText = computed(() => {
   // 如果实例存在，且选中的数组有长度，就用空格拼接并去除两端空格
   // 如果没选，或者被清空了（取消选择），则返回默认提示文字
@@ -172,6 +177,22 @@ const activeStyle = computed(() => {
     backgroundColor: '#FFF3E9',
   }
 })
+// 添加接收函数：
+const onAddressSelected = (item: any) => {
+  console.log('选中的地址：', item)
+  addressStore.changeSelectedAddress(item)
+  popup.value?.close()
+}
+
+// 💡 1. 定义子组件的 ref
+const addressPanelRef = ref()
+
+// 💡 2. 在页面显示时，如果弹窗开着，就调用子组件暴露的刷新方法
+onShow(() => {
+  if (popupName.value === 'address') {
+    addressPanelRef.value?.getAddressList()
+  }
+})
 </script>
 
 <template>
@@ -184,7 +205,7 @@ const activeStyle = computed(() => {
     ref="skuPopupRef"
     :actived-style="activeStyle"
     @add-cart="onAddCart"
-    @buy-now="buyNow"
+    @buy-now="onBuyNow"
   />
   <scroll-view scroll-y class="viewport">
     <!-- 基本信息 -->
@@ -220,14 +241,23 @@ const activeStyle = computed(() => {
 
       <!-- 操作面板 (保持留选择、送至、服务) -->
       <view class="operation">
-        <!-- 💡 使用内联箭头函数写法，和讲师图4对齐 -->
+        <!-- 使用内联箭头函数写法，和讲师图4对齐 -->
         <view class="item arrow" @tap="($event) => openSkuPopup(SkuMode.Both)">
           <text class="label">选择</text>
           <text class="text ellipsis">{{ selectArrText }}</text>
         </view>
         <view class="item arrow" @tap="($event) => openPopup('address')">
           <text class="label">送至</text>
-          <text class="text ellipsis">请选择收货地址</text>
+          <text class="text ellipsis">
+            {{
+              addressStore.selectedAddress
+                ? addressStore.selectedAddress.fullLocation.replace(
+                    /\s+/g,
+                    '',
+                  ) + addressStore.selectedAddress.address.replace(/\s+/g, '')
+                : '请选择收货地址'
+            }}</text
+          >
         </view>
         <view class="item arrow" @tap="($event) => openPopup('service')">
           <text class="label">服务</text>
@@ -243,7 +273,7 @@ const activeStyle = computed(() => {
       </view>
       <view class="content">
         <view class="properties">
-          <!-- 👇 属性详情循环渲染 -->
+          <!-- 属性详情循环渲染 -->
           <view
             class="item"
             v-for="(item, index) in goodsData?.details?.properties"
@@ -253,7 +283,7 @@ const activeStyle = computed(() => {
             <text class="value">{{ item.value }}</text>
           </view>
         </view>
-        <!-- 👇 图片详情循环渲染 -->
+        <!-- 图片详情循环渲染 -->
         <image
           v-for="item in goodsData?.details?.pictures"
           :key="item"
@@ -324,7 +354,12 @@ const activeStyle = computed(() => {
   <!-- 在 template 的最下面 -->
   <uni-popup ref="popup" type="bottom" background-color="#fff">
     <!--修改：通过 popupName 判断渲染哪个子组件 -->
-    <AddressPanel v-if="popupName === 'address'" @close="popup?.close()" />
+    <AddressPanel
+      v-if="popupName === 'address'"
+      ref="addressPanelRef"
+      @close="popup?.close()"
+      @select="onAddressSelected"
+    />
     <ServicePanel v-if="popupName === 'service'" @close="popup?.close()" />
   </uni-popup>
 </template>
